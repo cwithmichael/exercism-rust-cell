@@ -55,6 +55,18 @@ impl<T: Copy + PartialEq> Reactor<T> {
         }
     }
 
+    /* pub fn notify_compute_cells(
+        compute_cells: &HashMap<CellId, Rc<RefCell<cell::ReactorCell<T>>>>,
+    ) {
+        for cell in compute_cells {
+            let dep_cell = &mut *cell.1.borrow_mut();
+            match &mut *dep_cell {
+                cell::ReactorCell::ComputeCell(ref mut c) => c.update_value(),
+                _ => (),
+            }
+        }
+    }*/
+
     // Creates an input cell with the specified initial value, returning its ID.
     pub fn create_input(&mut self, initial: T) -> InputCellId {
         let gen_id: i32 = self.rng.gen();
@@ -96,14 +108,22 @@ impl<T: Copy + PartialEq> Reactor<T> {
         let mut cell_deps = vec![];
         for dep in dependencies {
             match self.cells.get(dep) {
-                Some(cell) => {
-                    let c = cell.borrow();
+                Some(input_cell) => {
+                    let c = input_cell.borrow();
                     deps.push(c.value());
-                    cell_deps.push(Rc::clone(cell));
+                    cell_deps.push(Rc::clone(input_cell));
                 }
-                None => return Err(*dep),
+                None => match self.compute_cells.get(dep) {
+                    Some(compute_cell) => {
+                        let c = compute_cell.borrow();
+                        deps.push(c.value());
+                        cell_deps.push(Rc::clone(compute_cell));
+                    }
+                    None => return Err(*dep),
+                },
             }
         }
+
         self.compute_cells.insert(
             CellId::Compute(cci),
             Rc::new(RefCell::new(cell::ReactorCell::ComputeCell(
@@ -156,12 +176,22 @@ impl<T: Copy + PartialEq> Reactor<T> {
             Some(cell) => match *cell.borrow_mut() {
                 cell::ReactorCell::InputCell(ref mut ic) => {
                     ic.set_value(new_value);
-                    true
                 }
-                _ => false,
+                _ => return false,
             },
-            None => false,
+            None => return false,
         }
+        // Notify compute cells
+        for cell in &self.compute_cells {
+            let compute_cell = &mut *cell.1.borrow_mut();
+            match &mut *compute_cell {
+                cell::ReactorCell::ComputeCell(ref mut c) => {
+                    c.update_value();
+                }
+                _ => (),
+            }
+        }
+        true
     }
 
     // Adds a callback to the specified compute cell.

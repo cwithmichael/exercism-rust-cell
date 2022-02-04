@@ -32,8 +32,16 @@ pub mod cell {
     pub fn update_value(&mut self) {
       let mut args = vec![];
       for dep in &self.cell_deps {
-        let dep_cell = &*dep.borrow();
-        args.push(dep_cell.value());
+        let dep_cell = &mut *dep.borrow_mut();
+        match dep_cell {
+          ReactorCell::ComputeCell(ref mut c) => {
+            c.update_value();
+            args.push(c.value());
+          }
+          ReactorCell::InputCell(i) => {
+            args.push(i.value());
+          }
+        }
       }
       self.value = (self.compute_func)(&args)
     }
