@@ -39,14 +39,14 @@ pub enum RemoveCallbackError {
     NonexistentCallback,
 }
 
-pub struct Reactor<T: Copy> {
-    cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<T>>>>,
-    compute_cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<T>>>>,
+pub struct Reactor<'a, T: Copy> {
+    cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<'a, T>>>>,
+    compute_cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<'a, T>>>>,
     rng: ThreadRng,
 }
 
 // You are guaranteed that Reactor will only be tested against types that are Copy + PartialEq.
-impl<T: Copy + PartialEq> Reactor<T> {
+impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     pub fn new() -> Self {
         Reactor {
             cells: HashMap::new(),
@@ -130,6 +130,7 @@ impl<T: Copy + PartialEq> Reactor<T> {
                 cell::ComputeCell {
                     value: compute_func(&deps),
                     compute_func: Box::new(compute_func),
+                    callbacks: None,
                     cell_deps: cell_deps,
                 },
             ))),
@@ -206,12 +207,31 @@ impl<T: Copy + PartialEq> Reactor<T> {
     // * Exactly once if the compute cell's value changed as a result of the set_value call.
     //   The value passed to the callback should be the final value of the compute cell after the
     //   set_value call.
-    pub fn add_callback<F: FnMut(T)>(
+    pub fn add_callback<F: 'a + FnMut(T)>(
         &mut self,
-        _id: ComputeCellId,
-        _callback: F,
+        id: ComputeCellId,
+        callback: F,
     ) -> Option<CallbackId> {
-        unimplemented!()
+        match self.compute_cells.get_mut(&CellId::Compute(id)) {
+            Some(cell) => match *cell.borrow_mut() {
+                cell::ReactorCell::ComputeCell(ref mut cc) => {
+                    //cc.set_value(new_value);
+                    let gen_id: i32 = self.rng.gen();
+                    let cbi = CallbackId(gen_id);
+                    match cc.callbacks.as_mut() {
+                        Some(cbs) => {
+                            cbs.push(Rc::new(callback));
+                        }
+                        None => {
+                            cc.callbacks = Some(vec![Rc::new(callback)]);
+                        }
+                    }
+                    Some(cbi)
+                }
+                _ => None,
+            },
+            None => None,
+        }
     }
 
     // Removes the specified callback, using an ID returned from add_callback.

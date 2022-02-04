@@ -154,7 +154,6 @@ impl CallbackRecorder {
 }
 
 #[test]
-#[ignore]
 fn compute_cells_fire_callbacks() {
     let cb = CallbackRecorder::new();
     let mut reactor = Reactor::new();

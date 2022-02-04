@@ -22,13 +22,17 @@ pub mod cell {
     }
   }
 
-  pub struct ComputeCell<T: Copy> {
+  pub struct ComputeCell<'a, T: Copy> {
     pub value: T,
     pub compute_func: Box<dyn Fn(&[T]) -> T>,
-    pub cell_deps: Vec<Rc<RefCell<ReactorCell<T>>>>,
+    pub callbacks: Option<Vec<Rc<dyn FnMut(T) + 'a>>>,
+    pub cell_deps: Vec<Rc<RefCell<ReactorCell<'a, T>>>>,
   }
 
-  impl<T: Copy> ComputeCell<T> {
+  impl<'a, T: Copy> ComputeCell<'a, T> {
+    pub fn add_callback<F: FnMut(T)>(&mut self, cb: Rc<dyn FnMut(T)>) {
+      self.callbacks.as_mut().unwrap().push(cb);
+    }
     pub fn update_value(&mut self) {
       let mut args = vec![];
       for dep in &self.cell_deps {
@@ -43,22 +47,30 @@ pub mod cell {
           }
         }
       }
-      self.value = (self.compute_func)(&args)
+      self.value = (self.compute_func)(&args);
+      match &self.callbacks {
+        Some(cbs) => {
+          for cb in cbs {
+            //cb(3)
+          }
+        }
+        None => (),
+      }
     }
   }
 
-  impl<T: Copy> Cell<T> for ComputeCell<T> {
+  impl<'a, T: Copy> Cell<T> for ComputeCell<'a, T> {
     fn value(&self) -> T {
       self.value
     }
   }
 
-  pub enum ReactorCell<T: Copy> {
+  pub enum ReactorCell<'a, T: Copy> {
     InputCell(InputCell<T>),
-    ComputeCell(ComputeCell<T>),
+    ComputeCell(ComputeCell<'a, T>),
   }
 
-  impl<T: Copy> Cell<T> for ReactorCell<T> {
+  impl<'a, T: Copy> Cell<T> for ReactorCell<'a, T> {
     fn value(&self) -> T {
       match self {
         ReactorCell::InputCell(ic) => ic.value(),
