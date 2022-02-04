@@ -206,7 +206,6 @@ fn error_removing_callback_from_nonexisting_cell() {
 }
 
 #[test]
-#[ignore]
 fn callbacks_only_fire_on_change() {
     let cb = CallbackRecorder::new();
     let mut reactor = Reactor::new();
@@ -228,7 +227,6 @@ fn callbacks_only_fire_on_change() {
 }
 
 #[test]
-#[ignore]
 fn callbacks_can_be_called_multiple_times() {
     let cb = CallbackRecorder::new();
     let mut reactor = Reactor::new();
@@ -247,7 +245,6 @@ fn callbacks_can_be_called_multiple_times() {
 }
 
 #[test]
-#[ignore]
 fn callbacks_can_be_called_from_multiple_cells() {
     let cb1 = CallbackRecorder::new();
     let cb2 = CallbackRecorder::new();
@@ -338,7 +335,6 @@ fn removing_a_callback_multiple_times_doesnt_interfere_with_other_callbacks() {
 }
 
 #[test]
-#[ignore]
 fn callbacks_should_only_be_called_once_even_if_multiple_dependencies_change() {
     let cb = CallbackRecorder::new();
     let mut reactor = Reactor::new();
@@ -366,7 +362,6 @@ fn callbacks_should_only_be_called_once_even_if_multiple_dependencies_change() {
 }
 
 #[test]
-#[ignore]
 fn callbacks_should_not_be_called_if_dependencies_change_but_output_value_doesnt_change() {
     let cb = CallbackRecorder::new();
     let mut reactor = Reactor::new();
@@ -393,7 +388,6 @@ fn callbacks_should_not_be_called_if_dependencies_change_but_output_value_doesnt
 }
 
 #[test]
-#[ignore]
 fn test_adder_with_boolean_values() {
     // This is a digital logic circuit called an adder:
     // https://en.wikipedia.org/wiki/Adder_(electronics)

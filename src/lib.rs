@@ -39,7 +39,7 @@ pub enum RemoveCallbackError {
     NonexistentCallback,
 }
 
-pub struct Reactor<'a, T: Copy> {
+pub struct Reactor<'a, T: Copy + PartialEq> {
     cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<'a, T>>>>,
     compute_cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<'a, T>>>>,
     rng: ThreadRng,
