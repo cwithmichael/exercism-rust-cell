@@ -25,12 +25,12 @@ pub mod cell {
   pub struct ComputeCell<'a, T: Copy> {
     pub value: T,
     pub compute_func: Box<dyn Fn(&[T]) -> T>,
-    pub callbacks: Option<Vec<Rc<dyn FnMut(T) + 'a>>>,
+    pub callbacks: Option<Vec<Rc<RefCell<dyn FnMut(T) + 'a>>>>,
     pub cell_deps: Vec<Rc<RefCell<ReactorCell<'a, T>>>>,
   }
 
   impl<'a, T: Copy> ComputeCell<'a, T> {
-    pub fn add_callback<F: FnMut(T)>(&mut self, cb: Rc<dyn FnMut(T)>) {
+    pub fn add_callback<F: FnMut(T)>(&mut self, cb: Rc<RefCell<dyn FnMut(T)>>) {
       self.callbacks.as_mut().unwrap().push(cb);
     }
     pub fn update_value(&mut self) {
@@ -51,7 +51,8 @@ pub mod cell {
       match &self.callbacks {
         Some(cbs) => {
           for cb in cbs {
-            //cb(3)
+            let mut callback = cb.borrow_mut();
+            callback(self.value);
           }
         }
         None => (),

@@ -220,10 +220,10 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
                     let cbi = CallbackId(gen_id);
                     match cc.callbacks.as_mut() {
                         Some(cbs) => {
-                            cbs.push(Rc::new(callback));
+                            cbs.push(Rc::new(RefCell::new(callback)));
                         }
                         None => {
-                            cc.callbacks = Some(vec![Rc::new(callback)]);
+                            cc.callbacks = Some(vec![Rc::new(RefCell::new(callback))]);
                         }
                     }
                     Some(cbi)

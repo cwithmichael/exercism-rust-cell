@@ -169,7 +169,6 @@ fn compute_cells_fire_callbacks() {
 }
 
 #[test]
-#[ignore]
 fn error_adding_callback_to_nonexistent_cell() {
     let mut dummy_reactor = Reactor::new();
     let input = dummy_reactor.create_input(1);
