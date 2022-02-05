@@ -182,7 +182,6 @@ fn error_adding_callback_to_nonexistent_cell() {
 }
 
 #[test]
-#[ignore]
 fn error_removing_callback_from_nonexisting_cell() {
     let mut dummy_reactor = Reactor::new();
     let dummy_input = dummy_reactor.create_input(1);
@@ -269,7 +268,6 @@ fn callbacks_can_be_called_from_multiple_cells() {
 }
 
 #[test]
-#[ignore]
 fn callbacks_can_be_added_and_removed() {
     let cb1 = CallbackRecorder::new();
     let cb2 = CallbackRecorder::new();
@@ -304,7 +302,6 @@ fn callbacks_can_be_added_and_removed() {
 }
 
 #[test]
-#[ignore]
 fn removing_a_callback_multiple_times_doesnt_interfere_with_other_callbacks() {
     let cb1 = CallbackRecorder::new();
     let cb2 = CallbackRecorder::new();

@@ -1,5 +1,5 @@
 mod reactor_cell;
-pub use crate::reactor_cell::cell::{self, Cell};
+pub use crate::reactor_cell::*;
 use rand::prelude::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -40,8 +40,8 @@ pub enum RemoveCallbackError {
 }
 
 pub struct Reactor<'a, T: Copy + PartialEq> {
-    cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<'a, T>>>>,
-    compute_cells: HashMap<CellId, Rc<RefCell<cell::ReactorCell<'a, T>>>>,
+    cells: HashMap<CellId, Rc<RefCell<ReactorCell<'a, T>>>>,
+    compute_cells: HashMap<CellId, Rc<RefCell<ReactorCell<'a, T>>>>,
     rng: ThreadRng,
 }
 
@@ -54,28 +54,15 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
             rng: rand::thread_rng(),
         }
     }
-
-    /* pub fn notify_compute_cells(
-        compute_cells: &HashMap<CellId, Rc<RefCell<cell::ReactorCell<T>>>>,
-    ) {
-        for cell in compute_cells {
-            let dep_cell = &mut *cell.1.borrow_mut();
-            match &mut *dep_cell {
-                cell::ReactorCell::ComputeCell(ref mut c) => c.update_value(),
-                _ => (),
-            }
-        }
-    }*/
-
     // Creates an input cell with the specified initial value, returning its ID.
     pub fn create_input(&mut self, initial: T) -> InputCellId {
         let gen_id: i32 = self.rng.gen();
         let ici = InputCellId(gen_id);
         self.cells.insert(
             CellId::Input(ici),
-            Rc::new(RefCell::new(cell::ReactorCell::InputCell(
-                cell::InputCell { value: initial },
-            ))),
+            Rc::new(RefCell::new(ReactorCell::InputCell(InputCell {
+                value: initial,
+            }))),
         );
         ici
     }
@@ -126,14 +113,12 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
 
         self.compute_cells.insert(
             CellId::Compute(cci),
-            Rc::new(RefCell::new(cell::ReactorCell::ComputeCell(
-                cell::ComputeCell {
-                    value: compute_func(&deps),
-                    compute_func: Box::new(compute_func),
-                    callbacks: None,
-                    cell_deps: cell_deps,
-                },
-            ))),
+            Rc::new(RefCell::new(ReactorCell::ComputeCell(ComputeCell {
+                value: compute_func(&deps),
+                compute_func: Box::new(compute_func),
+                callbacks: HashMap::new(),
+                cell_deps: cell_deps,
+            }))),
         );
         Ok(cci)
     }
@@ -175,7 +160,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     pub fn set_value(&mut self, id: InputCellId, new_value: T) -> bool {
         match self.cells.get_mut(&CellId::Input(id)) {
             Some(cell) => match *cell.borrow_mut() {
-                cell::ReactorCell::InputCell(ref mut ic) => {
+                ReactorCell::InputCell(ref mut ic) => {
                     ic.set_value(new_value);
                 }
                 _ => return false,
@@ -186,7 +171,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
         for cell in &self.compute_cells {
             let compute_cell = &mut *cell.1.borrow_mut();
             match &mut *compute_cell {
-                cell::ReactorCell::ComputeCell(ref mut c) => {
+                ReactorCell::ComputeCell(ref mut c) => {
                     c.update_value();
                 }
                 _ => (),
@@ -214,18 +199,11 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     ) -> Option<CallbackId> {
         match self.compute_cells.get_mut(&CellId::Compute(id)) {
             Some(cell) => match *cell.borrow_mut() {
-                cell::ReactorCell::ComputeCell(ref mut cc) => {
+                ReactorCell::ComputeCell(ref mut cc) => {
                     //cc.set_value(new_value);
                     let gen_id: i32 = self.rng.gen();
                     let cbi = CallbackId(gen_id);
-                    match cc.callbacks.as_mut() {
-                        Some(cbs) => {
-                            cbs.push(Rc::new(RefCell::new(callback)));
-                        }
-                        None => {
-                            cc.callbacks = Some(vec![Rc::new(RefCell::new(callback))]);
-                        }
-                    }
+                    cc.callbacks.insert(cbi, Rc::new(RefCell::new(callback)));
                     Some(cbi)
                 }
                 _ => None,
@@ -244,10 +222,15 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
         cell: ComputeCellId,
         callback: CallbackId,
     ) -> Result<(), RemoveCallbackError> {
-        unimplemented!(
-            "Remove the callback identified by the CallbackId {:?} from the cell {:?}",
-            callback,
-            cell,
-        )
+        match self.compute_cells.get(&CellId::Compute(cell)) {
+            Some(compute_cell) => match *compute_cell.borrow_mut() {
+                ReactorCell::ComputeCell(ref mut cc) => match cc.callbacks.remove(&callback) {
+                    Some(_) => Ok(()),
+                    None => Err(RemoveCallbackError::NonexistentCallback),
+                },
+                _ => Err(RemoveCallbackError::NonexistentCell),
+            },
+            None => Err(RemoveCallbackError::NonexistentCell),
+        }
     }
 }
