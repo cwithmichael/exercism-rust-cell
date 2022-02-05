@@ -39,6 +39,7 @@ impl<'a, T: Copy + PartialEq> ComputeCell<'a, T> {
     let mut args = vec![];
     for dep in &self.cell_deps {
       let dep_cell = &mut *dep.borrow_mut();
+      // Could be an Input or Compute Cell
       match dep_cell {
         ReactorCell::ComputeCell(ref mut c) => {
           c.update_value();
@@ -49,6 +50,7 @@ impl<'a, T: Copy + PartialEq> ComputeCell<'a, T> {
         }
       }
     }
+    // Store the new value to check it against the previous one
     let new_value = (self.compute_func)(&args);
     if self.value != new_value {
       for cb in &self.callbacks {

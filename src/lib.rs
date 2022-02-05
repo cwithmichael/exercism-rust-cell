@@ -56,8 +56,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     }
     // Creates an input cell with the specified initial value, returning its ID.
     pub fn create_input(&mut self, initial: T) -> InputCellId {
-        let gen_id: i32 = self.rng.gen();
-        let ici = InputCellId(gen_id);
+        let ici = InputCellId(self.rng.gen());
         self.cells.insert(
             CellId::Input(ici),
             Rc::new(RefCell::new(ReactorCell::InputCell(InputCell {
@@ -88,8 +87,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     where
         F: 'static,
     {
-        let gen_id: i32 = self.rng.gen();
-        let cci = ComputeCellId(gen_id);
+        let cci = ComputeCellId(self.rng.gen());
 
         let mut deps = vec![];
         let mut cell_deps = vec![];
@@ -200,7 +198,6 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
         match self.compute_cells.get_mut(&CellId::Compute(id)) {
             Some(cell) => match *cell.borrow_mut() {
                 ReactorCell::ComputeCell(ref mut cc) => {
-                    //cc.set_value(new_value);
                     let gen_id: i32 = self.rng.gen();
                     let cbi = CallbackId(gen_id);
                     cc.callbacks.insert(cbi, Rc::new(RefCell::new(callback)));
