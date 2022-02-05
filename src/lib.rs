@@ -40,7 +40,7 @@ pub enum RemoveCallbackError {
 }
 
 pub struct Reactor<'a, T: Copy + PartialEq> {
-    cells: HashMap<CellId, Rc<RefCell<ReactorCell<'a, T>>>>,
+    input_cells: HashMap<CellId, Rc<RefCell<ReactorCell<'a, T>>>>,
     compute_cells: HashMap<CellId, Rc<RefCell<ReactorCell<'a, T>>>>,
     rng: ThreadRng,
 }
@@ -49,7 +49,7 @@ pub struct Reactor<'a, T: Copy + PartialEq> {
 impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     pub fn new() -> Self {
         Reactor {
-            cells: HashMap::new(),
+            input_cells: HashMap::new(),
             compute_cells: HashMap::new(),
             rng: rand::thread_rng(),
         }
@@ -57,7 +57,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     // Creates an input cell with the specified initial value, returning its ID.
     pub fn create_input(&mut self, initial: T) -> InputCellId {
         let ici = InputCellId(self.rng.gen());
-        self.cells.insert(
+        self.input_cells.insert(
             CellId::Input(ici),
             Rc::new(RefCell::new(ReactorCell::InputCell(InputCell {
                 value: initial,
@@ -79,20 +79,17 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     // Notice that there is no way to *remove* a cell.
     // This means that you may assume, without checking, that if the dependencies exist at creation
     // time they will continue to exist as long as the Reactor exists.
-    pub fn create_compute<F: Fn(&[T]) -> T>(
+    pub fn create_compute<F: 'static + Fn(&[T]) -> T>(
         &mut self,
         dependencies: &[CellId],
         compute_func: F,
-    ) -> Result<ComputeCellId, CellId>
-    where
-        F: 'static,
-    {
+    ) -> Result<ComputeCellId, CellId> {
         let cci = ComputeCellId(self.rng.gen());
 
         let mut deps = vec![];
         let mut cell_deps = vec![];
         for dep in dependencies {
-            match self.cells.get(dep) {
+            match self.input_cells.get(dep) {
                 Some(input_cell) => {
                     let c = input_cell.borrow();
                     deps.push(c.value());
@@ -137,7 +134,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
                 }
                 None => None,
             },
-            CellId::Input(_) => match self.cells.get(&id) {
+            CellId::Input(_) => match self.input_cells.get(&id) {
                 Some(cell) => {
                     let c = cell.borrow();
                     Some(c.value())
@@ -156,7 +153,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     //
     // As before, that turned out to add too much extra complexity.
     pub fn set_value(&mut self, id: InputCellId, new_value: T) -> bool {
-        match self.cells.get_mut(&CellId::Input(id)) {
+        match self.input_cells.get_mut(&CellId::Input(id)) {
             Some(cell) => match *cell.borrow_mut() {
                 ReactorCell::InputCell(ref mut ic) => {
                     ic.set_value(new_value);
@@ -166,8 +163,8 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
             None => return false,
         }
         // Notify compute cells
-        for cell in &self.compute_cells {
-            let compute_cell = &mut *cell.1.borrow_mut();
+        for (_, cell) in &self.compute_cells {
+            let compute_cell = &mut *cell.borrow_mut();
             match &mut *compute_cell {
                 ReactorCell::ComputeCell(ref mut c) => {
                     c.update_value();
@@ -198,8 +195,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
         match self.compute_cells.get_mut(&CellId::Compute(id)) {
             Some(cell) => match *cell.borrow_mut() {
                 ReactorCell::ComputeCell(ref mut cc) => {
-                    let gen_id: i32 = self.rng.gen();
-                    let cbi = CallbackId(gen_id);
+                    let cbi = CallbackId(self.rng.gen());
                     cc.callbacks.insert(cbi, Rc::new(RefCell::new(callback)));
                     Some(cbi)
                 }

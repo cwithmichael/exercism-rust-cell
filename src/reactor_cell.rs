@@ -53,8 +53,8 @@ impl<'a, T: Copy + PartialEq> ComputeCell<'a, T> {
     // Store the new value to check it against the previous one
     let new_value = (self.compute_func)(&args);
     if self.value != new_value {
-      for cb in &self.callbacks {
-        let mut callback = cb.1.borrow_mut();
+      for (_, cb) in &self.callbacks {
+        let mut callback = cb.borrow_mut();
         callback(new_value);
       }
     }
