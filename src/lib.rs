@@ -84,19 +84,19 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
         dependencies: &[CellId],
         compute_func: F,
     ) -> Result<ComputeCellId, CellId> {
-        let mut deps = vec![];
+        let mut func_args = vec![];
         let mut cell_deps = vec![];
         for dep in dependencies {
             match self.input_cells.get(dep) {
                 Some(input_cell) => {
                     let c = input_cell.borrow();
-                    deps.push(c.value());
+                    func_args.push(c.value());
                     cell_deps.push(Rc::clone(input_cell));
                 }
                 None => match self.compute_cells.get(dep) {
                     Some(compute_cell) => {
                         let c = compute_cell.borrow();
-                        deps.push(c.value());
+                        func_args.push(c.value());
                         cell_deps.push(Rc::clone(compute_cell));
                     }
                     None => return Err(*dep),
@@ -107,7 +107,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
         self.compute_cells.insert(
             CellId::Compute(cci),
             Rc::new(RefCell::new(ReactorCell::ComputeCell(ComputeCell {
-                value: compute_func(&deps),
+                value: compute_func(&func_args),
                 compute_func: Box::new(compute_func),
                 callbacks: HashMap::new(),
                 cell_deps: cell_deps,
