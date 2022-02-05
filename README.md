@@ -1,6 +1,6 @@
 # Description
 
-This is my solution to the React problem on Exercism for Rust's track.
+This is my solution to the [React problem](https://exercism.org/tracks/rust/exercises/react) on Exercism for Rust's track.
 The original readme for the problem is below.
 
 ## React
