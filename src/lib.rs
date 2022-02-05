@@ -84,7 +84,6 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
         dependencies: &[CellId],
         compute_func: F,
     ) -> Result<ComputeCellId, CellId> {
-        let cci = ComputeCellId(self.rng.gen());
         let mut deps = vec![];
         let mut cell_deps = vec![];
         for dep in dependencies {
@@ -104,7 +103,7 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
                 },
             }
         }
-
+        let cci = ComputeCellId(self.rng.gen());
         self.compute_cells.insert(
             CellId::Compute(cci),
             Rc::new(RefCell::new(ReactorCell::ComputeCell(ComputeCell {
