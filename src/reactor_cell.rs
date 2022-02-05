@@ -32,7 +32,7 @@ pub struct ComputeCell<'a, T: Copy + PartialEq> {
 }
 
 impl<'a, T: Copy + PartialEq> ComputeCell<'a, T> {
-  pub fn add_callback<F: FnMut(T)>(&mut self, cb_id: CallbackId, cb: Rc<RefCell<dyn FnMut(T)>>) {
+  pub fn add_callback(&mut self, cb_id: CallbackId, cb: Rc<RefCell<dyn FnMut(T)>>) {
     self.callbacks.insert(cb_id, cb);
   }
   pub fn update_value(&mut self) {
