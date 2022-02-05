@@ -1,9 +1,14 @@
-# React
+# Description
+
+This is my solution to the React problem on Exercism for Rust's track.
+The original readme for the problem is below.
+
+## React
 
 Welcome to React on Exercism's Rust Track.
 If you need help running the tests or submitting your code, check out `HELP.md`.
 
-## Instructions
+### Instructions
 
 Implement a basic reactive system.
 
@@ -17,16 +22,16 @@ cells). Implement updates so that when an input value is changed, values
 propagate to reach a new stable system state.
 
 In addition, compute cells should allow for registering change notification
-callbacks.  Call a cell’s callbacks when the cell’s value in a new stable
+callbacks. Call a cell’s callbacks when the cell’s value in a new stable
 state has changed from the previous stable state.
 
-## Source
+### Source
 
-### Created by
+#### Created by
 
 - @petertseng
 
-### Contributed to by
+#### Contributed to by
 
 - @AndrewKvalheim
 - @coriolinus
