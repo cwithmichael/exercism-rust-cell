@@ -69,8 +69,6 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     // Creates a compute cell with the specified dependencies and compute function.
     // The compute function is expected to take in its arguments in the same order as specified in
     // `dependencies`.
-    // You do not need to reject compute functions that expect more arguments than there are
-    // dependencies (how would you check for this, anyway?).
     //
     // If any dependency doesn't exist, returns an Err with that nonexistent dependency.
     // (If multiple dependencies do not exist, exactly which one is returned is not defined and
@@ -117,12 +115,6 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     }
 
     // Retrieves the current value of the cell, or None if the cell does not exist.
-    //
-    // You may wonder whether it is possible to implement `get(&self, id: CellId) -> Option<&Cell>`
-    // and have a `value(&self)` method on `Cell`.
-    //
-    // It turns out this introduces a significant amount of extra complexity to this exercise.
-    // We chose not to cover this here, since this exercise is probably enough work as-is.
     pub fn value(&self, id: CellId) -> Option<T> {
         match id {
             CellId::Compute(_) => match self.compute_cells.get(&id) {
@@ -145,11 +137,6 @@ impl<'a, T: Copy + PartialEq> Reactor<'a, T> {
     // Sets the value of the specified input cell.
     //
     // Returns false if the cell does not exist.
-    //
-    // Similarly, you may wonder about `get_mut(&mut self, id: CellId) -> Option<&mut Cell>`, with
-    // a `set_value(&mut self, new_value: T)` method on `Cell`.
-    //
-    // As before, that turned out to add too much extra complexity.
     pub fn set_value(&mut self, id: InputCellId, new_value: T) -> bool {
         match self.input_cells.get_mut(&CellId::Input(id)) {
             Some(cell) => match *cell.borrow_mut() {
